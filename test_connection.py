@@ -2,6 +2,8 @@
 from petoi_import import *
 from PetoiRobot.ardSerial import goodPorts
 
+
+
 autoConnect()
 
 print("\n--- DEBUG ---")
