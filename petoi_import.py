@@ -5,8 +5,9 @@ from pathlib import Path
 PETOI_SUBPATH = 'extensions/petoi-robot-thirdex/python/libraries'
 
 SEARCH_PATHS = [
-    Path.home() / 'Library/DFScratch' / PETOI_SUBPATH,          
-    Path.home() / 'AppData/Roaming/DFScratch' / PETOI_SUBPATH,   
+    Path(__file__).parent,                                         # local PetoiRobot/ in this repo
+    Path.home() / 'Library/DFScratch' / PETOI_SUBPATH,            # macOS MindPlus
+    Path.home() / 'AppData/Roaming/DFScratch' / PETOI_SUBPATH,    # Windows MindPlus
     Path.home() / 'AppData/Local/DFScratch' / PETOI_SUBPATH,
     Path.home() / 'Downloads/PetoiRobot/..',
     Path.home() / 'Desktop/PetoiRobot/..',

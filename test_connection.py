@@ -23,5 +23,3 @@ else:
     sendSkillStr('ksit', 1)
 
     closePort()
-
-s
