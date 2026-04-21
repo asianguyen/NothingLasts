@@ -1,7 +1,5 @@
 import tkinter as tk
 import numpy as np
-from Petoi_MindPlusLib import *
-
 
 points_coords = [(85,85)]
 points = []
