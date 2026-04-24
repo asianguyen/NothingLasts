@@ -9,10 +9,47 @@ import math
 import json
 from petoi_import import *
 
-
 CANVAS_WIDTH = 1000
 CANVAS_HEIGHT = 600
 CANVAS_PAD = 80
+BITTLE_NAME = "BittleEA"
+
+import asyncio
+from bleak import BleakClient, BleakScanner
+
+NUS_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+
+async def _run_robot_ble(path_data):
+    print("[BLE] Scanning for Bittle...")
+    devices = await BleakScanner.discover(timeout=10)
+    bittle = None
+    for d in devices:
+        if d.name and BITTLE_NAME in d.name:
+            bittle = d
+            break
+    
+    if bittle is None:
+        raise Exception("Could not find {BITTLE_NAME} via BLE scan")
+    
+    print(f"[BLE] Found {bittle.name} at {bittle.address}")
+    
+    async with BleakClient(bittle.address) as client:
+        print("[BLE] Connected!")
+        
+        async def send_cmd(cmd, delay):
+            await client.write_gatt_char(NUS_RX_UUID, (cmd + '\n').encode())
+            await asyncio.sleep(delay)
+        
+        await send_cmd('kup', 1)
+        
+        for segment in path_data['segments']:
+            interior_angle = segment['interior_angle']
+            angle_text = "n/a" if interior_angle is None else f"{interior_angle:6.2f}°"
+            print(f"  Segment {segment['index']}: distance={segment['distance']:6.2f}, interior angle={angle_text}")
+            
+            await send_cmd('kwkF', segment['distance'] / 3.0)
+            if interior_angle is not None:
+                await send_cmd('kvtL', interior_angle / 4.5)
 
 
 def convert_canvas_to_robot(canvas_x, canvas_y, canvas_width=1000, canvas_height=600, pad=80):
@@ -166,19 +203,9 @@ def move_robot_to_points(path_data):
 
     print()
 
-    autoConnect()
-    sendSkillStr('kup', 1)
+ 
 
-    for segment in path_data['segments']:
-        interior_angle = segment['interior_angle']
-        angle_text = "n/a" if interior_angle is None else f"{interior_angle:6.2f}°"
-        print(f"  Segment {segment['index']}: distance={segment['distance']:6.2f}, interior angle={angle_text}")
-
-
-        print(f"[{i+1:2d}/{len(robot_points)}] Moving to ({segment['start'][0]:6.2f}, {segment['start'][1]:6.2f})")
-        sendSkillStr('kwkF', segment['distance'] / 3.0) # 3 inches per second
-        if segment['interior_angle'] is not None:
-            sendSkillStr('kvtL', segment['interior_angle'] / 4.5) # 4.5 degrees per second
+    asyncio.run(_run_robot_ble(path_data))
         
 
     print()

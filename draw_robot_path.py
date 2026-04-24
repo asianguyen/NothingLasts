@@ -212,7 +212,7 @@ class RobotPathDrawer:
             return True
 
         interior_angle = self._get_interior_angle(position)
-        return bool(interior_angle is not None and interior_angle >= 90.0)
+        return bool(interior_angle is not None and interior_angle >= 30.0)
 
 
 if __name__ == "__main__":
