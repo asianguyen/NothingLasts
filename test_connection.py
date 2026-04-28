@@ -21,6 +21,9 @@ else:
     print("Walking forward...")
     sendSkillStr('kwkF', 3)
 
+    print("Turning right...")
+    sendSkillStr('kvtR', 90)
+
     print("Sitting down...")
     sendSkillStr('ksit', 1)
 

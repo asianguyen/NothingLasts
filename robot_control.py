@@ -44,12 +44,24 @@ async def _run_robot_ble(path_data):
         
         for segment in path_data['segments']:
             interior_angle = segment['interior_angle']
+            turn_delta = segment['turn_delta_deg']
             angle_text = "n/a" if interior_angle is None else f"{interior_angle:6.2f}°"
             print(f"  Segment {segment['index']}: distance={segment['distance']:6.2f}, interior angle={angle_text}")
-            
+
+            if turn_delta > 0:
+                await send_cmd('kvtR', abs(turn_delta) / 4.5)
+            else:
+                await send_cmd('kvtL', abs(turn_delta) / 4.5)
             await send_cmd('kwkF', segment['distance'] / 3.0)
-            if interior_angle is not None:
-                await send_cmd('kvtL', interior_angle / 4.5)
+
+
+
+def normalize_turn_delta(target_deg, current_deg):
+    """Return signed shortest turn from current heading to target heading."""
+    delta = (target_deg - current_deg + 360.0) % 360.0
+    if delta > 180.0:
+        delta -= 360.0
+    return delta
 
 
 def convert_canvas_to_robot(canvas_x, canvas_y, canvas_width=1000, canvas_height=600, pad=80):
@@ -114,15 +126,26 @@ def calculate_interior_angle(p0, p1, p2):
     return 180.0 - turn_angle
 
 
-def convert_path_to_robot_metrics(points, canvas_width=CANVAS_WIDTH, canvas_height=CANVAS_HEIGHT, pad=CANVAS_PAD):
+def convert_path_to_robot_metrics(
+    points,
+    canvas_width=CANVAS_WIDTH,
+    canvas_height=CANVAS_HEIGHT,
+    pad=CANVAS_PAD,
+    initial_heading_deg=0.0,
+):
     """Convert canvas points into robot-space points and per-segment metrics."""
     robot_points = [convert_canvas_to_robot(x, y, canvas_width, canvas_height, pad) for x, y in points]
 
     segments = []
+    current_heading_deg = initial_heading_deg
     for index in range(1, len(robot_points)):
         start = robot_points[index - 1]
         end = robot_points[index]
         distance = calculate_distance(start, end)
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        target_heading_deg = math.degrees(math.atan2(dy, dx))
+        turn_delta_deg = normalize_turn_delta(target_heading_deg, current_heading_deg)
 
         interior_angle = None
         if index >= 2:
@@ -134,9 +157,13 @@ def convert_path_to_robot_metrics(points, canvas_width=CANVAS_WIDTH, canvas_heig
                 "start": start,
                 "end": end,
                 "distance": distance,
+                "target_heading_deg": target_heading_deg,
+                "turn_delta_deg": turn_delta_deg,
                 "interior_angle": interior_angle,
             }
         )
+
+        current_heading_deg = target_heading_deg
 
     return {
         "canvas_points": points,
@@ -203,12 +230,7 @@ def move_robot_to_points(path_data):
 
     print()
 
- 
-
     asyncio.run(_run_robot_ble(path_data))
-        
-
-    print()
     
     # Optional: Smooth the path (reduce number of points)
     # original_count = len(robot_points)
@@ -223,37 +245,26 @@ def move_robot_to_points(path_data):
     print(f"{'='*70}\n")
 
 
-# def load_points_from_file(filename="drawn_points.json"):
-#     """Load saved points from JSON file"""
-#     try:
-#         with open(filename, "r") as f:
-#             points = json.load(f)
-#         print(f"Loaded {len(points)} points from {filename}")
-#         return points
-#     except FileNotFoundError:
-#         print(f"[ERROR] File {filename} not found")
-#         return []
-#     except json.JSONDecodeError:
-#         print(f"[ERROR] Invalid JSON in {filename}")
-#         return []
+def load_points_from_file(filename="drawn_points_physical.json"):
+    """Load saved points from JSON file"""
+    try:
+        with open(filename, "r") as f:
+            points = json.load(f)
+        print(f"Loaded {len(points)} points from {filename}")
+        return points
+    except FileNotFoundError:
+        print(f"[ERROR] File {filename} not found")
+        return []
+    except json.JSONDecodeError:
+        print(f"[ERROR] Invalid JSON in {filename}")
+        return []
 
 
 # Test the module standalone
 if __name__ == "__main__":
-    # Test with sample points from your drawing pad
-    test_points = [
-        (85, 85),      # Starting point
-        (200, 150),    # Second point
-        (350, 120),    # Third point
-        (500, 250),    # Fourth point
-        (400, 400)     # Fifth point
-    ]
-    
-    print("Testing robot control with sample points...\n")
-    move_robot_to_points(test_points)
     
     # Or load from saved file:
-    # print("Loading points from file...\n")
-    # points = load_points_from_file()
-    # if points:
-    #     move_robot_to_points(points)
+    print("Loading points from file...\n")
+    points = load_points_from_file()
+    if points:
+        move_robot_to_points(points)
