@@ -49,6 +49,17 @@ class RobotPathDrawer:
         
         frame = tk.Frame(root)
         frame.pack(pady=10)
+
+        #------------
+        name_frame = tk.Frame(root)
+        name_frame.pack(pady=5)
+
+        tk.Label(name_frame, text="Bittle Name:").pack(side="left", padx=5)
+
+        self.bittle_name_var = tk.StringVar(value="BittleEA")
+        self.bittle_name_entry = tk.Entry(name_frame, textvariable=self.bittle_name_var, width=20)
+        self.bittle_name_entry.pack(side="left", padx=5)
+        #------------
         
         self.clear_button = tk.Button(frame, text="Clear", command=self.clear)
         self.clear_button.pack(side="left", padx=5)
@@ -152,7 +163,10 @@ class RobotPathDrawer:
     def _execute_robot(self):
         """Execute robot in separate thread"""
         try:
-            move_robot_to_points(self.path_data)
+            bittle_name = self.bittle_name_var.get().strip()
+            if not bittle_name:
+                raise Exception("Please enter a Bittle name.")
+            move_robot_to_points(self.path_data, bittle_name)
             
             self.status_label.config(text="✓ Robot execution completed!")
             messagebox.showinfo("Complete", "Robot has finished executing the path!")

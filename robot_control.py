@@ -19,17 +19,17 @@ from bleak import BleakClient, BleakScanner
 
 NUS_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
-async def _run_robot_ble(path_data):
+async def _run_robot_ble(path_data, bittle_name=BITTLE_NAME):
     print("[BLE] Scanning for Bittle...")
     devices = await BleakScanner.discover(timeout=10)
     bittle = None
     for d in devices:
-        if d.name and BITTLE_NAME in d.name:
+        if d.name and bittle_name in d.name:
             bittle = d
             break
     
     if bittle is None:
-        raise Exception("Could not find {BITTLE_NAME} via BLE scan")
+        raise Exception(f"Could not find {bittle_name} via BLE scan")
     
     print(f"[BLE] Found {bittle.name} at {bittle.address}")
     
@@ -48,10 +48,13 @@ async def _run_robot_ble(path_data):
             angle_text = "n/a" if interior_angle is None else f"{interior_angle:6.2f}°"
             print(f"  Segment {segment['index']}: distance={segment['distance']:6.2f}, interior angle={angle_text}")
 
+            print(f"turn delta: {turn_delta:6.2f}°")
             if abs(turn_delta) > 2:
                 if turn_delta > 0:
+                    print("turning left")
                     await send_cmd('kvtL', abs(turn_delta) / 32.0)
                 else:
+                    print("turning right")
                     await send_cmd('kvtR', abs(turn_delta) / 32.0)
             await send_cmd('kwkF', segment['distance'] / 3.8)
 
@@ -208,7 +211,7 @@ def smooth_path(points, threshold=2.0):
     return smoothed
 
 
-def move_robot_to_points(path_data):
+def move_robot_to_points(path_data, bittle_name=BITTLE_NAME):
     """
     Move robot through the saved points
     
@@ -233,7 +236,7 @@ def move_robot_to_points(path_data):
 
     print()
 
-    asyncio.run(_run_robot_ble(path_data))
+    asyncio.run(_run_robot_ble(path_data, bittle_name))
     
     # Optional: Smooth the path (reduce number of points)
     # original_count = len(robot_points)
