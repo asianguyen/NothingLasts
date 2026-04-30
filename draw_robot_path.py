@@ -18,9 +18,9 @@ class RobotPathDrawer:
         self.root = root
         self.root.title("Robot Path Drawer")
         
-        self.pad = 80
-        self.width = 1000
-        self.height = 600
+        self.pad = 35
+        self.width = 570
+        self.height = 307
         self.r = 3
         
         self.draw_top = self.pad
@@ -28,11 +28,11 @@ class RobotPathDrawer:
         self.draw_right = self.width - self.pad
         self.draw_bottom = self.height - self.pad
         
-        self.points_coords = [(85, 85)]
+        self.points_coords = [(40, 40)]
         self.visual_points = []
         self.path_data = {}
         self.lines = []
-        self.current_vector = np.array([85, 85])
+        self.current_vector = np.array([40, 40])
         self.is_executing = False
         
         self.canvas = tk.Canvas(root, width=self.width, height=self.height, bg="white")
@@ -40,8 +40,8 @@ class RobotPathDrawer:
         self.canvas.bind("<Button-1>", self.click)
         
         self.canvas.create_oval(
-            85-self.r, 85-self.r, 
-            85+self.r, 85+self.r, 
+            40-self.r, 40-self.r, 
+            40+self.r, 40+self.r, 
             fill="black"
         )
         
@@ -100,14 +100,14 @@ class RobotPathDrawer:
             self.canvas.delete(point)
         
         self.points_coords.clear()
-        self.points_coords.append((85, 85))
+        self.points_coords.append((40, 40))
         self.visual_points.clear()
         
         for line in self.lines:
             self.canvas.delete(line)
         self.lines.clear()
         
-        self.current_vector = np.array([85, 85])
+        self.current_vector = np.array([40, 40])
         self.status_label.config(text="Canvas cleared. Ready to draw.")
     
     def save_and_execute_path(self):

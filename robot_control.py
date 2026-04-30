@@ -9,9 +9,9 @@ import math
 import json
 from petoi_import import *
 
-CANVAS_WIDTH = 1000
-CANVAS_HEIGHT = 600
-CANVAS_PAD = 80
+CANVAS_WIDTH = 570
+CANVAS_HEIGHT = 307
+CANVAS_PAD = 35
 BITTLE_NAME = "BittleEA"
 
 import asyncio
@@ -48,11 +48,14 @@ async def _run_robot_ble(path_data):
             angle_text = "n/a" if interior_angle is None else f"{interior_angle:6.2f}°"
             print(f"  Segment {segment['index']}: distance={segment['distance']:6.2f}, interior angle={angle_text}")
 
-            if turn_delta > 0:
-                await send_cmd('kvtR', abs(turn_delta) / 4.5)
-            else:
-                await send_cmd('kvtL', abs(turn_delta) / 4.5)
-            await send_cmd('kwkF', segment['distance'] / 3.0)
+            if abs(turn_delta) > 2:
+                if turn_delta > 0:
+                    await send_cmd('kvtL', abs(turn_delta) / 32.0)
+                else:
+                    await send_cmd('kvtR', abs(turn_delta) / 32.0)
+            await send_cmd('kwkF', segment['distance'] / 3.8)
+
+        await send_cmd('kup', 1)
 
 
 
