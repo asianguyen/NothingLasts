@@ -33,18 +33,43 @@ class RobotPathDrawer:
         self.path_data = {}
         self.lines = []
         self.current_vector = np.array([40, 40])
-        self.is_executing = False
+        self.is_executing_r1 = False
+        self.is_executing_r2 = False
 
-        #------------ Bittle Name Input ------------
-        name_frame = tk.Frame(root)
-        name_frame.pack(pady=5)
+        #------------ Robot 1 (Creator) Calibration ------------
+        r1_frame = tk.Frame(root)
+        r1_frame.pack(pady=3)
 
-        tk.Label(name_frame, text="Bittle Name:").pack(side="left", padx=5)
+        tk.Label(r1_frame, text="Robot 1 (Creator)", font=("Arial", 9, "bold")).pack(side="left", padx=5)
+        tk.Label(r1_frame, text="Name:").pack(side="left", padx=(10, 2))
+        self.bittle_name_var = tk.StringVar(value="BittleB3")
+        tk.Entry(r1_frame, textvariable=self.bittle_name_var, width=12).pack(side="left", padx=2)
 
-        self.bittle_name_var = tk.StringVar(value="BittleEA")
-        self.bittle_name_entry = tk.Entry(name_frame, textvariable=self.bittle_name_var, width=20)
-        self.bittle_name_entry.pack(side="left", padx=5)
-        #--------------------------------------------
+        tk.Label(r1_frame, text="Turn Scale:").pack(side="left", padx=(10, 2))
+        self.turn_scale_var = tk.StringVar(value="18.0")
+        tk.Entry(r1_frame, textvariable=self.turn_scale_var, width=6).pack(side="left", padx=2)
+
+        tk.Label(r1_frame, text="Walk Scale:").pack(side="left", padx=(10, 2))
+        self.walk_scale_var = tk.StringVar(value="3.7")
+        tk.Entry(r1_frame, textvariable=self.walk_scale_var, width=6).pack(side="left", padx=2)
+
+        #------------ Robot 2 (Eraser) Calibration ------------
+        r2_frame = tk.Frame(root)
+        r2_frame.pack(pady=3)
+
+        tk.Label(r2_frame, text="Robot 2 (Eraser) ", font=("Arial", 9, "bold")).pack(side="left", padx=5)
+        tk.Label(r2_frame, text="Name:").pack(side="left", padx=(10, 2))
+        self.bittle2_name_var = tk.StringVar(value="BittleEA")
+        tk.Entry(r2_frame, textvariable=self.bittle2_name_var, width=12).pack(side="left", padx=2)
+
+        tk.Label(r2_frame, text="Turn Scale:").pack(side="left", padx=(10, 2))
+        self.turn_scale2_var = tk.StringVar(value="31.7")
+        tk.Entry(r2_frame, textvariable=self.turn_scale2_var, width=6).pack(side="left", padx=2)
+
+        tk.Label(r2_frame, text="Walk Scale:").pack(side="left", padx=(10, 2))
+        self.walk_scale2_var = tk.StringVar(value="3.8")
+        tk.Entry(r2_frame, textvariable=self.walk_scale2_var, width=6).pack(side="left", padx=2)
+        #----------------------------------------------------------
         
         self.canvas = tk.Canvas(root, width=self.width, height=self.height, bg="white")
         self.canvas.pack(fill="both")
@@ -73,11 +98,11 @@ class RobotPathDrawer:
             command=self.save_and_execute_path)
         self.save_button.pack(side="left", padx=5)
 
-        self.save_button = tk.Button(
-            execute_draw_frame, 
-            text="Follow Path from JSON", 
-            command=self.save_and_execute_path)
-        self.save_button.pack(side="left", padx=5)
+        self.follow_button = tk.Button(
+            execute_draw_frame,
+            text="Follow Path",
+            command=self.execute_from_json)
+        self.follow_button.pack(side="left", padx=5)
         
         self.status_label = tk.Label(root, text="Ready. Click to add points (max 5).", font=("Arial", 10))
         self.status_label.pack(pady=5)
@@ -136,10 +161,10 @@ class RobotPathDrawer:
             messagebox.showwarning("No Path", "Draw at least 2 points before saving.")
             return
         
-        if self.is_executing:
-            messagebox.showinfo("Busy", "Robot is already executing. Please wait...")
+        if self.is_executing_r1:
+            messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
             return
-        
+
         path_data = convert_path_to_robot_metrics(self.points_coords)
         self.path_data = path_data
 
@@ -163,33 +188,78 @@ class RobotPathDrawer:
         
         self.save_button.config(state="disabled")
         self.clear_button.config(state="disabled")
-        self.is_executing = True
-        
+        self.is_executing_r1 = True
+
         robot_thread = threading.Thread(target=self._execute_robot)
         robot_thread.daemon = True
         robot_thread.start()
     
     def _execute_robot(self):
-        """Execute robot in separate thread"""
+        """Execute Robot 1 (creator) in separate thread"""
         try:
             bittle_name = self.bittle_name_var.get().strip()
             if not bittle_name:
-                raise Exception("Please enter a Bittle name.")
-            move_robot_to_points(self.path_data, bittle_name)
-            
-            self.status_label.config(text="✓ Robot execution completed!")
-            messagebox.showinfo("Complete", "Robot has finished executing the path!")
-            print("\n[SUCCESS] Robot execution completed!\n")
-        
+                raise Exception("Please enter a Robot 1 name.")
+            turn_scale = float(self.turn_scale_var.get())
+            walk_scale = float(self.walk_scale_var.get())
+            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale)
+
+            self.status_label.config(text="✓ Robot 1 execution completed!")
+            messagebox.showinfo("Complete", "Robot 1 has finished executing the path!")
+            print("\n[SUCCESS] Robot 1 execution completed!\n")
+
         except Exception as e:
             self.status_label.config(text=f"✗ Error: {str(e)}")
-            messagebox.showerror("Error", f"Robot execution failed:\n{str(e)}")
+            messagebox.showerror("Error", f"Robot 1 execution failed:\n{str(e)}")
             print(f"\n[ERROR] {str(e)}\n")
-        
+
         finally:
             self.save_button.config(state="normal")
             self.clear_button.config(state="normal")
-            self.is_executing = False
+            self.is_executing_r1 = False
+
+    def execute_from_json(self):
+        """Load path from JSON and execute with Robot 2 (eraser)"""
+        if self.is_executing_r2:
+            messagebox.showinfo("Busy", "Robot 2 is already executing. Please wait...")
+            return
+
+        try:
+            with open("drawn_points_physical.json", "r") as f:
+                path_data = json.load(f)
+        except FileNotFoundError:
+            messagebox.showerror("Error", "No saved path found. Draw and save a path with Robot 1 first.")
+            return
+        except json.JSONDecodeError:
+            messagebox.showerror("Error", "drawn_points_physical.json is corrupted.")
+            return
+
+        self.follow_button.config(state="disabled")
+        self.is_executing_r2 = True
+        self.status_label.config(text="Starting Robot 2 (eraser)...")
+
+        def _run():
+            try:
+                bittle_name = self.bittle2_name_var.get().strip()
+                if not bittle_name:
+                    raise Exception("Please enter a Robot 2 name.")
+                turn_scale = float(self.turn_scale2_var.get())
+                walk_scale = float(self.walk_scale2_var.get())
+                move_robot_to_points(path_data, bittle_name, turn_scale, walk_scale)
+                self.status_label.config(text="✓ Robot 2 execution completed!")
+                messagebox.showinfo("Complete", "Robot 2 has finished following the path!")
+                print("\n[SUCCESS] Robot 2 execution completed!\n")
+            except Exception as e:
+                self.status_label.config(text=f"✗ Error: {str(e)}")
+                messagebox.showerror("Error", f"Robot 2 execution failed:\n{str(e)}")
+                print(f"\n[ERROR] {str(e)}\n")
+            finally:
+                self.follow_button.config(state="normal")
+                self.is_executing_r2 = False
+
+        robot_thread = threading.Thread(target=_run)
+        robot_thread.daemon = True
+        robot_thread.start()
     
     def inside_box(self, x, y):
         """Check if point is inside drawing area"""

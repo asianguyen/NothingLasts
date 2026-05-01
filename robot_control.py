@@ -19,7 +19,7 @@ from bleak import BleakClient, BleakScanner
 
 NUS_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
-async def _run_robot_ble(path_data, bittle_name=BITTLE_NAME):
+async def _run_robot_ble(path_data, bittle_name=BITTLE_NAME, turn_scale=32.0, walk_scale=3.8):
     print("[BLE] Scanning for Bittle...")
     devices = await BleakScanner.discover(timeout=10)
     bittle = None
@@ -27,21 +27,21 @@ async def _run_robot_ble(path_data, bittle_name=BITTLE_NAME):
         if d.name and bittle_name in d.name:
             bittle = d
             break
-    
+
     if bittle is None:
         raise Exception(f"Could not find {bittle_name} via BLE scan")
-    
+
     print(f"[BLE] Found {bittle.name} at {bittle.address}")
-    
+
     async with BleakClient(bittle.address) as client:
         print("[BLE] Connected!")
-        
+
         async def send_cmd(cmd, delay):
             await client.write_gatt_char(NUS_RX_UUID, (cmd + '\n').encode())
             await asyncio.sleep(delay)
-        
+
         await send_cmd('kup', 1)
-        
+
         for segment in path_data['segments']:
             interior_angle = segment['interior_angle']
             turn_delta = segment['turn_delta_deg']
@@ -52,11 +52,11 @@ async def _run_robot_ble(path_data, bittle_name=BITTLE_NAME):
             if abs(turn_delta) > 2:
                 if turn_delta > 0:
                     print("turning left")
-                    await send_cmd('kvtL', abs(turn_delta) / 32.0)
+                    await send_cmd('kvtL', abs(turn_delta) / turn_scale)
                 else:
                     print("turning right")
-                    await send_cmd('kvtR', abs(turn_delta) / 32.0)
-            await send_cmd('kwkF', segment['distance'] / 3.8)
+                    await send_cmd('kvtR', abs(turn_delta) / turn_scale)
+            await send_cmd('kwkF', segment['distance'] / walk_scale)
 
         await send_cmd('kup', 1)
 
@@ -211,7 +211,7 @@ def smooth_path(points, threshold=2.0):
     return smoothed
 
 
-def move_robot_to_points(path_data, bittle_name=BITTLE_NAME):
+def move_robot_to_points(path_data, bittle_name=BITTLE_NAME, turn_scale=32.0, walk_scale=3.8):
     """
     Move robot through the saved points
     
@@ -236,7 +236,7 @@ def move_robot_to_points(path_data, bittle_name=BITTLE_NAME):
 
     print()
 
-    asyncio.run(_run_robot_ble(path_data, bittle_name))
+    asyncio.run(_run_robot_ble(path_data, bittle_name, turn_scale, walk_scale))
     
     # Optional: Smooth the path (reduce number of points)
     # original_count = len(robot_points)
