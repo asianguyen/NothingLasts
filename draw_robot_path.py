@@ -18,7 +18,7 @@ class RobotPathDrawer:
         self.root = root
         self.root.title("Robot Path Drawer")
         
-        self.pad = 35
+        self.pad = 30
         self.width = 570
         self.height = 307
         self.r = 3
@@ -28,11 +28,11 @@ class RobotPathDrawer:
         self.draw_right = self.width - self.pad
         self.draw_bottom = self.height - self.pad
         
-        self.points_coords = [(40, 40)]
+        self.points_coords = [(35, 35)]
         self.visual_points = []
         self.path_data = {}
         self.lines = []
-        self.current_vector = np.array([40, 40])
+        self.current_vector = np.array([35, 35])
         self.is_executing_r1 = False
         self.is_executing_r2 = False
 
@@ -76,8 +76,8 @@ class RobotPathDrawer:
         self.canvas.bind("<Button-1>", self.click)
         
         self.canvas.create_oval(
-            40-self.r, 40-self.r, 
-            40+self.r, 40+self.r, 
+            35-self.r, 35-self.r, 
+            35+self.r, 35+self.r, 
             fill="black"
         )
         
@@ -95,13 +95,13 @@ class RobotPathDrawer:
         self.save_button = tk.Button(
             execute_draw_frame, 
             text="Draw Path from Canvas", 
-            command=self.save_and_execute_path)
+            command=self.save_and_execute_path_create)
         self.save_button.pack(side="left", padx=5)
 
         self.follow_button = tk.Button(
             execute_draw_frame,
             text="Follow Path",
-            command=self.execute_from_json)
+            command=self.save_and_execute_path_erase)
         self.follow_button.pack(side="left", padx=5)
         
         self.status_label = tk.Label(root, text="Ready. Click to add points (max 5).", font=("Arial", 10))
@@ -145,17 +145,17 @@ class RobotPathDrawer:
             self.canvas.delete(point)
         
         self.points_coords.clear()
-        self.points_coords.append((40, 40))
+        self.points_coords.append((35, 35))
         self.visual_points.clear()
         
         for line in self.lines:
             self.canvas.delete(line)
         self.lines.clear()
         
-        self.current_vector = np.array([40, 40])
+        self.current_vector = np.array([35, 35])
         self.status_label.config(text="Canvas cleared. Ready to draw.")
     
-    def save_and_execute_path(self):
+    def save_and_execute_path_create(self):
         """Save path and automatically execute robot"""
         if len(self.points_coords) <= 1:
             messagebox.showwarning("No Path", "Draw at least 2 points before saving.")
@@ -190,18 +190,77 @@ class RobotPathDrawer:
         self.clear_button.config(state="disabled")
         self.is_executing_r1 = True
 
-        robot_thread = threading.Thread(target=self._execute_robot)
+        robot_thread = threading.Thread(target=self._execute_create_robot)
+        robot_thread.daemon = True
+        robot_thread.start()
+
+    def save_and_execute_path_erase(self):
+        """Save path and automatically execute robot"""
+        if len(self.points_coords) <= 1:
+            messagebox.showwarning("No Path", "Draw at least 2 points before saving.")
+            return
+        
+        if self.is_executing_r1:
+            messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
+            return
+
+        path_data = convert_path_to_robot_metrics(self.points_coords)
+        self.path_data = path_data
+
+        with open("drawn_points.json", "w") as f:
+            json.dump(self.points_coords, f)
+
+        with open("drawn_points_physical.json", "w") as f:
+            json.dump(path_data, f)
+        
+        print(f"\n{'='*60}")
+        print(f"SAVED PATH: {self.points_coords}")
+        print(f"Physical robot points: {path_data['robot_points']}")
+        print(f"Total points: {len(self.points_coords)}")
+        print(f"{'='*60}\n")
+        
+        self.status_label.config(text=f"✓ Saved {len(self.points_coords)} points. Starting robot...")
+        messagebox.showinfo(
+            "Path Saved", 
+            f"Saved {len(self.points_coords)} points.\nStarting robot execution..."
+        )
+        
+        self.save_button.config(state="disabled")
+        self.clear_button.config(state="disabled")
+        self.is_executing_r1 = True
+
+        robot_thread = threading.Thread(target=self._execute_erase_robot)
         robot_thread.daemon = True
         robot_thread.start()
     
-    def _execute_robot(self):
+    def _execute_create_robot(self):
         """Execute Robot 1 (creator) in separate thread"""
         try:
-            bittle_name = self.bittle_name_var.get().strip()
-            if not bittle_name:
-                raise Exception("Please enter a Robot 1 name.")
-            turn_scale = float(self.turn_scale_var.get())
-            walk_scale = float(self.walk_scale_var.get())
+            bittle_name = "BittleB3" 
+            turn_scale = 27.0
+            walk_scale = 3.85
+            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale)
+
+            self.status_label.config(text="✓ Robot 1 execution completed!")
+            messagebox.showinfo("Complete", "Robot 1 has finished executing the path!")
+            print("\n[SUCCESS] Robot 1 execution completed!\n")
+
+        except Exception as e:
+            self.status_label.config(text=f"✗ Error: {str(e)}")
+            messagebox.showerror("Error", f"Robot 1 execution failed:\n{str(e)}")
+            print(f"\n[ERROR] {str(e)}\n")
+
+        finally:
+            self.save_button.config(state="normal")
+            self.clear_button.config(state="normal")
+            self.is_executing_r1 = False
+    
+    def _execute_erase_robot(self):
+        """Execute Robot 1 (creator) in separate thread"""
+        try:
+            bittle_name = "Bittle8F"  
+            turn_scale = 31.7
+            walk_scale = 3.5
             move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale)
 
             self.status_label.config(text="✓ Robot 1 execution completed!")
@@ -218,48 +277,48 @@ class RobotPathDrawer:
             self.clear_button.config(state="normal")
             self.is_executing_r1 = False
 
-    def execute_from_json(self):
-        """Load path from JSON and execute with Robot 2 (eraser)"""
-        if self.is_executing_r2:
-            messagebox.showinfo("Busy", "Robot 2 is already executing. Please wait...")
-            return
+    # def execute_from_json(self):
+    #     """Load path from JSON and execute with Robot 2 (eraser)"""
+    #     if self.is_executing_r2:
+    #         messagebox.showinfo("Busy", "Robot 2 is already executing. Please wait...")
+    #         return
 
-        try:
-            with open("drawn_points_physical.json", "r") as f:
-                path_data = json.load(f)
-        except FileNotFoundError:
-            messagebox.showerror("Error", "No saved path found. Draw and save a path with Robot 1 first.")
-            return
-        except json.JSONDecodeError:
-            messagebox.showerror("Error", "drawn_points_physical.json is corrupted.")
-            return
+    #     try:
+    #         with open("drawn_points_physical.json", "r") as f:
+    #             path_data = json.load(f)
+    #     except FileNotFoundError:
+    #         messagebox.showerror("Error", "No saved path found. Draw and save a path with Robot 1 first.")
+    #         return
+    #     except json.JSONDecodeError:
+    #         messagebox.showerror("Error", "drawn_points_physical.json is corrupted.")
+    #         return
 
-        self.follow_button.config(state="disabled")
-        self.is_executing_r2 = True
-        self.status_label.config(text="Starting Robot 2 (eraser)...")
+    #     self.follow_button.config(state="disabled")
+    #     self.is_executing_r2 = True
+    #     self.status_label.config(text="Starting Robot 2 (eraser)...")
 
-        def _run():
-            try:
-                bittle_name = self.bittle2_name_var.get().strip()
-                if not bittle_name:
-                    raise Exception("Please enter a Robot 2 name.")
-                turn_scale = float(self.turn_scale2_var.get())
-                walk_scale = float(self.walk_scale2_var.get())
-                move_robot_to_points(path_data, bittle_name, turn_scale, walk_scale)
-                self.status_label.config(text="✓ Robot 2 execution completed!")
-                messagebox.showinfo("Complete", "Robot 2 has finished following the path!")
-                print("\n[SUCCESS] Robot 2 execution completed!\n")
-            except Exception as e:
-                self.status_label.config(text=f"✗ Error: {str(e)}")
-                messagebox.showerror("Error", f"Robot 2 execution failed:\n{str(e)}")
-                print(f"\n[ERROR] {str(e)}\n")
-            finally:
-                self.follow_button.config(state="normal")
-                self.is_executing_r2 = False
+    #     def _run():
+    #         try:
+    #             bittle_name = self.bittle2_name_var.get().strip()
+    #             if not bittle_name:
+    #                 raise Exception("Please enter a Robot 2 name.")
+    #             turn_scale = float(self.turn_scale2_var.get())
+    #             walk_scale = float(self.walk_scale2_var.get())
+    #             move_robot_to_points(path_data, bittle_name, turn_scale, walk_scale)
+    #             self.status_label.config(text="✓ Robot 2 execution completed!")
+    #             messagebox.showinfo("Complete", "Robot 2 has finished following the path!")
+    #             print("\n[SUCCESS] Robot 2 execution completed!\n")
+    #         except Exception as e:
+    #             self.status_label.config(text=f"✗ Error: {str(e)}")
+    #             messagebox.showerror("Error", f"Robot 2 execution failed:\n{str(e)}")
+    #             print(f"\n[ERROR] {str(e)}\n")
+    #         finally:
+    #             self.follow_button.config(state="normal")
+    #             self.is_executing_r2 = False
 
-        robot_thread = threading.Thread(target=_run)
-        robot_thread.daemon = True
-        robot_thread.start()
+    #     robot_thread = threading.Thread(target=_run)
+    #     robot_thread.daemon = True
+    #     robot_thread.start()
     
     def inside_box(self, x, y):
         """Check if point is inside drawing area"""

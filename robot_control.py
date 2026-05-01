@@ -11,7 +11,7 @@ from petoi_import import *
 
 CANVAS_WIDTH = 570
 CANVAS_HEIGHT = 307
-CANVAS_PAD = 35
+CANVAS_PAD = 30
 BITTLE_NAME = "BittleEA"
 
 import asyncio
