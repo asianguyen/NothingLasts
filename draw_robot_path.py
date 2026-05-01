@@ -67,7 +67,7 @@ class RobotPathDrawer:
         tk.Entry(r2_frame, textvariable=self.turn_scale2_var, width=6).pack(side="left", padx=2)
 
         tk.Label(r2_frame, text="Walk Scale:").pack(side="left", padx=(10, 2))
-        self.walk_scale2_var = tk.StringVar(value="3.8")
+        self.walk_scale2_var = tk.StringVar(value="3.5")
         tk.Entry(r2_frame, textvariable=self.walk_scale2_var, width=6).pack(side="left", padx=2)
         #----------------------------------------------------------
         
