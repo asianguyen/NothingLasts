@@ -59,7 +59,7 @@ class RobotPathDrawer:
 
         tk.Label(r2_frame, text="Robot 2 (Eraser) ", font=("Arial", 9, "bold")).pack(side="left", padx=5)
         tk.Label(r2_frame, text="Name:").pack(side="left", padx=(10, 2))
-        self.bittle2_name_var = tk.StringVar(value="BittleEA")
+        self.bittle2_name_var = tk.StringVar(value="Bittle8F")
         tk.Entry(r2_frame, textvariable=self.bittle2_name_var, width=12).pack(side="left", padx=2)
 
         tk.Label(r2_frame, text="Turn Scale:").pack(side="left", padx=(10, 2))
