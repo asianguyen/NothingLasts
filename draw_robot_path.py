@@ -61,12 +61,21 @@ class RobotPathDrawer:
         execute_draw_frame = tk.Frame(root)
         execute_draw_frame.pack(pady=10)
         
-        self.clear_button = tk.Button(execute_draw_frame, text="Clear", command=self.clear)
+        self.clear_button = tk.Button(
+            execute_draw_frame, 
+            text="Clear", 
+            command=self.clear)
         self.clear_button.pack(side="left", padx=5)
         
         self.save_button = tk.Button(
             execute_draw_frame, 
-            text="Execute From Canvas", 
+            text="Draw Path from Canvas", 
+            command=self.save_and_execute_path)
+        self.save_button.pack(side="left", padx=5)
+
+        self.save_button = tk.Button(
+            execute_draw_frame, 
+            text="Follow Path from JSON", 
             command=self.save_and_execute_path)
         self.save_button.pack(side="left", padx=5)
         
