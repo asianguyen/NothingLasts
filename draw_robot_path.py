@@ -33,8 +33,7 @@ class RobotPathDrawer:
         self.path_data = {}
         self.lines = []
         self.current_vector = np.array([35, 35])
-        self.is_executing_r1 = False
-        self.is_executing_r2 = False
+
 
         #------------ Robot 1 (Creator) Calibration ------------
         r1_frame = tk.Frame(root)
@@ -46,11 +45,11 @@ class RobotPathDrawer:
         tk.Entry(r1_frame, textvariable=self.bittle_name_var, width=12).pack(side="left", padx=2)
 
         tk.Label(r1_frame, text="Turn Scale:").pack(side="left", padx=(10, 2))
-        self.turn_scale_var = tk.StringVar(value="27.0")
+        self.turn_scale_var = tk.StringVar(value="30.0")
         tk.Entry(r1_frame, textvariable=self.turn_scale_var, width=6).pack(side="left", padx=2)
 
         tk.Label(r1_frame, text="Walk Scale:").pack(side="left", padx=(10, 2))
-        self.walk_scale_var = tk.StringVar(value="3.85")
+        self.walk_scale_var = tk.StringVar(value="3.95")
         tk.Entry(r1_frame, textvariable=self.walk_scale_var, width=6).pack(side="left", padx=2)
 
         #------------ Robot 2 (Eraser) Calibration ------------
@@ -161,9 +160,9 @@ class RobotPathDrawer:
             messagebox.showwarning("No Path", "Draw at least 2 points before saving.")
             return
         
-        if self.is_executing_r1:
-            messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
-            return
+        # if self.is_executing_r1:
+        #     messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
+        #     return
 
         path_data = convert_path_to_robot_metrics(self.points_coords)
         self.path_data = path_data
@@ -188,7 +187,7 @@ class RobotPathDrawer:
         
         self.save_button.config(state="disabled")
         self.clear_button.config(state="disabled")
-        self.is_executing_r1 = True
+        # self.is_executing_r1 = True
 
         robot_thread = threading.Thread(target=self._execute_create_robot)
         robot_thread.daemon = True
@@ -200,9 +199,9 @@ class RobotPathDrawer:
             messagebox.showwarning("No Path", "Draw at least 2 points before saving.")
             return
         
-        if self.is_executing_r1:
-            messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
-            return
+        # if self.is_executing_r1:
+        #     messagebox.showinfo("Busy", "Robot 1 is already executing. Please wait...")
+        #     return
 
         path_data = convert_path_to_robot_metrics(self.points_coords)
         self.path_data = path_data
@@ -227,7 +226,7 @@ class RobotPathDrawer:
         
         self.save_button.config(state="disabled")
         self.clear_button.config(state="disabled")
-        self.is_executing_r1 = True
+        # self.is_executing_r1 = True
 
         robot_thread = threading.Thread(target=self._execute_erase_robot)
         robot_thread.daemon = True
@@ -236,10 +235,12 @@ class RobotPathDrawer:
     def _execute_create_robot(self):
         """Execute Robot 1 (creator) in separate thread"""
         try:
-            bittle_name = "BittleB3" 
-            turn_scale = 27.0
-            walk_scale = 3.85
-            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale)
+            bittle_name = self.bittle_name_var.get().strip()
+            if not bittle_name:
+                raise Exception("Please enter a Robot 1 name.")
+            turn_scale = float(self.turn_scale_var.get())
+            walk_scale = float(self.walk_scale_var.get())
+            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale, True)
 
             self.status_label.config(text="✓ Robot 1 execution completed!")
             messagebox.showinfo("Complete", "Robot 1 has finished executing the path!")
@@ -253,15 +254,17 @@ class RobotPathDrawer:
         finally:
             self.save_button.config(state="normal")
             self.clear_button.config(state="normal")
-            self.is_executing_r1 = False
+            # self.is_executing_r1 = False
     
     def _execute_erase_robot(self):
-        """Execute Robot 1 (creator) in separate thread"""
+        """Execute Robot 2 (eraser) in separate thread"""
         try:
-            bittle_name = "Bittle8F"  
-            turn_scale = 31.7
-            walk_scale = 3.5
-            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale)
+            bittle_name = self.bittle2_name_var.get().strip()
+            if not bittle_name:
+                raise Exception("Please enter a Robot 2 name.")
+            turn_scale = float(self.turn_scale2_var.get())
+            walk_scale = float(self.walk_scale2_var.get())
+            move_robot_to_points(self.path_data, bittle_name, turn_scale, walk_scale, False)
 
             self.status_label.config(text="✓ Robot 1 execution completed!")
             messagebox.showinfo("Complete", "Robot 1 has finished executing the path!")
@@ -275,7 +278,7 @@ class RobotPathDrawer:
         finally:
             self.save_button.config(state="normal")
             self.clear_button.config(state="normal")
-            self.is_executing_r1 = False
+            # self.is_executing_r1 = False
 
     # def execute_from_json(self):
     #     """Load path from JSON and execute with Robot 2 (eraser)"""
