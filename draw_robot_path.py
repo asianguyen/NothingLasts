@@ -72,7 +72,7 @@ class RobotPathDrawer:
         #----------------------------------------------------------
         
         self.canvas = tk.Canvas(root, width=self.width, height=self.height, bg="white")
-        self.canvas.pack(fill="both")
+        self.canvas.pack()
         self.canvas.bind("<Button-1>", self.click)
         
         self.canvas.create_oval(
@@ -370,4 +370,5 @@ class RobotPathDrawer:
 if __name__ == "__main__":
     root = tk.Tk()
     app = RobotPathDrawer(root)
+    root.resizable(False, False)
     root.mainloop()
