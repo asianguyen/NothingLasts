@@ -34,6 +34,17 @@ class RobotPathDrawer:
         self.lines = []
         self.current_vector = np.array([40, 40])
         self.is_executing = False
+
+        #------------ Bittle Name Input ------------
+        name_frame = tk.Frame(root)
+        name_frame.pack(pady=5)
+
+        tk.Label(name_frame, text="Bittle Name:").pack(side="left", padx=5)
+
+        self.bittle_name_var = tk.StringVar(value="BittleEA")
+        self.bittle_name_entry = tk.Entry(name_frame, textvariable=self.bittle_name_var, width=20)
+        self.bittle_name_entry.pack(side="left", padx=5)
+        #--------------------------------------------
         
         self.canvas = tk.Canvas(root, width=self.width, height=self.height, bg="white")
         self.canvas.pack(fill="both")
@@ -47,26 +58,15 @@ class RobotPathDrawer:
         
         self.draw_border()
         
-        frame = tk.Frame(root)
-        frame.pack(pady=10)
-
-        #------------
-        name_frame = tk.Frame(root)
-        name_frame.pack(pady=5)
-
-        tk.Label(name_frame, text="Bittle Name:").pack(side="left", padx=5)
-
-        self.bittle_name_var = tk.StringVar(value="BittleEA")
-        self.bittle_name_entry = tk.Entry(name_frame, textvariable=self.bittle_name_var, width=20)
-        self.bittle_name_entry.pack(side="left", padx=5)
-        #------------
+        execute_draw_frame = tk.Frame(root)
+        execute_draw_frame.pack(pady=10)
         
-        self.clear_button = tk.Button(frame, text="Clear", command=self.clear)
+        self.clear_button = tk.Button(execute_draw_frame, text="Clear", command=self.clear)
         self.clear_button.pack(side="left", padx=5)
         
         self.save_button = tk.Button(
-            frame, 
-            text="Save & Execute Robot", 
+            execute_draw_frame, 
+            text="Execute From Canvas", 
             command=self.save_and_execute_path)
         self.save_button.pack(side="left", padx=5)
         
