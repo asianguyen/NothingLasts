@@ -46,11 +46,11 @@ class RobotPathDrawer:
         tk.Entry(r1_frame, textvariable=self.bittle_name_var, width=12).pack(side="left", padx=2)
 
         tk.Label(r1_frame, text="Turn Scale:").pack(side="left", padx=(10, 2))
-        self.turn_scale_var = tk.StringVar(value="18.0")
+        self.turn_scale_var = tk.StringVar(value="27.0")
         tk.Entry(r1_frame, textvariable=self.turn_scale_var, width=6).pack(side="left", padx=2)
 
         tk.Label(r1_frame, text="Walk Scale:").pack(side="left", padx=(10, 2))
-        self.walk_scale_var = tk.StringVar(value="3.7")
+        self.walk_scale_var = tk.StringVar(value="3.85")
         tk.Entry(r1_frame, textvariable=self.walk_scale_var, width=6).pack(side="left", padx=2)
 
         #------------ Robot 2 (Eraser) Calibration ------------
